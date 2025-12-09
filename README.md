@@ -14,11 +14,13 @@ The player with the Highest Score goes first or random player if tie.
 
 <H1> Reveal Sequence </H1>
 
-For Reveal Sequence used a Queue system:
+For the Reveal Sequence, a Queue system was used:
 
-Used 2 Queues to store both players cards and then iterate to it and reveal one by one. used unitask for awating.
+Two Queues store both players' cards, which are iterated through to reveal them one by one. 
 
-Dequeue Initiative Player's Card --> Resolve Ability --> Update Score.
---> Opponent reveals their 1st card --> Score Updates.
+UniTask is used for awaiting.
+
+Dequeue Initiative Player's Card --> Resolve Ability --> Update Score. 
+--> Opponent reveals their card --> Resolve Ability --> Update Score.
 
 Iterate until every card is revealed.
