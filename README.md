@@ -1,7 +1,7 @@
 # Alter Test Project
 
 Project Overview
-1. Engine         : Unity 2022.3 (LTS)
+1. Engine         : Unity 2022.3.62.f3 (LTS)
 2. Networking     : Netcode for GameObjects (NGO)
 3. External Assets: DOTween (Animations), UniTask (Async Logic)
 
