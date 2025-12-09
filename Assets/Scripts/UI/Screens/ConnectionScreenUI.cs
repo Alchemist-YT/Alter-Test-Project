@@ -16,6 +16,22 @@ public class ConnectionScreenUI : BaseScreen
         Show();
     }
 
+    private void OnEnable()
+    {
+        RelayNetworkManager.Instance.OnRelayError += OnError;
+    }
+
+    private void OnError(string msg)
+    {
+        debugText.text = msg;
+    }
+
+    private void OnDisable()
+    {
+        RelayNetworkManager.Instance.OnRelayError += OnError;
+        SetButtonEnable();
+    }
+
     public void StartHost()
     {
         /* Debug.Log("Starting Host...");
@@ -37,7 +53,7 @@ public class ConnectionScreenUI : BaseScreen
     }
     public async UniTask OnStartHost()
     {
-        SetButtons();
+        SetButtonsDisable();
         string joinCode =
             await RelayNetworkManager.Instance.StartHostWithRelay();
 
@@ -45,12 +61,16 @@ public class ConnectionScreenUI : BaseScreen
         screen.SetActive(false);
 
     }
-    void SetButtons()
+    void SetButtonsDisable()
     {
         hostButton.interactable = false;
         ClientButton.interactable = false;
     }
-
+    private void SetButtonEnable()
+    {
+        hostButton.interactable = true;
+        ClientButton.interactable = true;
+    }
 
     public void StartClient()
     {
@@ -71,11 +91,25 @@ public class ConnectionScreenUI : BaseScreen
     }
     public async UniTask OnStartClient()
     {
-        SetButtons();
+        SetButtonsDisable();
 
-        await RelayNetworkManager.Instance.StartClientWithRelay(joinCodeIF.text);
+        string room_code = joinCodeIF.text;
+
+        if (string.IsNullOrEmpty(room_code) || string.IsNullOrWhiteSpace(room_code))
+        {
+            debugText.text = "Join Code is empty or Code Error!";
+            SetButtonEnable();
+            return;
+        }
+        bool success = await RelayNetworkManager.Instance.StartClientWithRelay(joinCodeIF.text);
+        if(!success)
+        {
+            SetButtonEnable();
+            return;
+        }
         roomCode.text = "Room Code: " + joinCodeIF.text;
         screen.SetActive(false);
     }
+
 
 }

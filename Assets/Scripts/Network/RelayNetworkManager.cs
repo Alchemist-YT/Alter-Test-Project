@@ -1,18 +1,18 @@
-using UnityEngine;
+using Cysharp.Threading.Tasks;
+using System;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
-using Unity.Services.Core;
+using Unity.Networking.Transport.Relay;
 using Unity.Services.Authentication;
+using Unity.Services.Core;
 using Unity.Services.Relay;
 using Unity.Services.Relay.Models;
-using Cysharp.Threading.Tasks;
-using Unity.Networking.Transport.Relay;
+using UnityEngine;
 
 public class RelayNetworkManager : MonoBehaviourSingleton<RelayNetworkManager>
 {
-
-    [Header("Players")]
-    [SerializeField] private int maxConnections = 1; 
+    public event Action<string> OnRelayError;
+    [SerializeField] private int maxConnections = 1;
 
     private async UniTask InitializeServices()
     {
@@ -25,43 +25,64 @@ public class RelayNetworkManager : MonoBehaviourSingleton<RelayNetworkManager>
 
     public async UniTask<string> StartHostWithRelay()
     {
-        await InitializeServices();
+        try
+        {
+            await InitializeServices();
 
-        Allocation allocation =
-            await RelayService.Instance.CreateAllocationAsync(maxConnections);
+            Allocation allocation =
+                await RelayService.Instance.CreateAllocationAsync(maxConnections);
 
-        string joinCode =
-            await RelayService.Instance.GetJoinCodeAsync(allocation.AllocationId);
+            string joinCode =
+                await RelayService.Instance.GetJoinCodeAsync(allocation.AllocationId);
 
-        UnityTransport transport =
-            NetworkManager.Singleton.GetComponent<UnityTransport>();
+            UnityTransport transport =
+                NetworkManager.Singleton.GetComponent<UnityTransport>();
 
-        transport.SetRelayServerData(
-            new RelayServerData(allocation, "dtls")
-        );
+            transport.SetRelayServerData(
+                new RelayServerData(allocation, "dtls")
+            );
 
-        NetworkManager.Singleton.StartHost();
+            NetworkManager.Singleton.StartHost();
 
-        Debug.Log("Host started | Join Code: " + joinCode);
-        return joinCode;
+            Debug.Log("Host started | Join Code: " + joinCode);
+            return joinCode;
+        }
+        catch (Exception e)
+        {
+            Debug.LogError("Relay Host Error: " + e.Message);
+            OnRelayError?.Invoke(e.Message);
+            return null;
+        }
     }
 
-
-    public async UniTask StartClientWithRelay(string joinCode)
+    public async UniTask<bool> StartClientWithRelay(string joinCode)
     {
-        await InitializeServices();
+        try
+        {
+            await InitializeServices();
 
-        JoinAllocation joinAllocation =
-            await RelayService.Instance.JoinAllocationAsync(joinCode);
+            JoinAllocation joinAllocation =
+                await RelayService.Instance.JoinAllocationAsync(joinCode);
 
-        UnityTransport transport =
-            NetworkManager.Singleton.GetComponent<UnityTransport>();
 
-        transport.SetRelayServerData(
-            new RelayServerData(joinAllocation, "dtls")
-        );
+            UnityTransport transport =
+                NetworkManager.Singleton.GetComponent<UnityTransport>();
 
-        NetworkManager.Singleton.StartClient();
-        Debug.Log("Client connected");
+            transport.SetRelayServerData(
+                new RelayServerData(joinAllocation, "dtls")
+            );
+
+            NetworkManager.Singleton.StartClient();
+            Debug.Log("Client connected");
+
+            return true;
+        }
+        catch (Exception e)
+        {
+            Debug.LogError("Relay Client Error: " + e.Message);
+            OnRelayError?.Invoke(e.Message);
+            return false;
+        }
+
     }
 }
